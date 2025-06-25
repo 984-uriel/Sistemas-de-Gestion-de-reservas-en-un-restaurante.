@@ -2,7 +2,7 @@
 ## Integrantes
 - Eunice Esmeralda - Desarrolladora,Documentadora.
 - Amanda serrato  - Desarrolladora, Documentadora.
-- Paola Dzul -  Desarroladora Documentadora.
+- Paola Dzul -  Desarrolladora Documentadora.
 - Uriel Castillo - Desarrollador, Tester, Documentador.
 
 ## Descripción
