@@ -6,5 +6,5 @@
 - Uriel Castillo - Desarrollador, Tester, Documentador.
 
 ## Descripción
-Sistema de gestión de reservas en un restaqurante dentro de un equipo ágil, simulando un entorno SCRUM.
+Sistema de gestión de reservas en un restaurante dentro de un equipo ágil, simulando un entorno SCRUM.
     
