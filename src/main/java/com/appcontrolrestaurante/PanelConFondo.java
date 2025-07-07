@@ -2,7 +2,8 @@ package com.appcontrolrestaurante;
 
 /**
  *
- * @author Jonathan
+ * @author Equipo de reservas
+ * pendiente a dearrollar en breve....
  */
 import javax.swing.*;
 import java.awt.*;
