@@ -1,14 +1,12 @@
 package com.appcontrolrestaurante;
-//Equipo de Reservas.
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class GuiControlRestaurante extends JFrame implements ActionListener  {
+public class GuiControlRestaurante extends JFrame implements ActionListener {
 
     private final JMenuBar barra;
     private final JMenu menuSistema, menuFormularios;
@@ -17,80 +15,166 @@ public class GuiControlRestaurante extends JFrame implements ActionListener  {
     private static Connection conexionSQL;
     private static FormularioCliente formCliente;
     private static FormularioProducto formProducto;
-    private PanelConFondo panelFondoPrincipal;
+    private JPanel panelPrincipal;
+    
+    // Colores personalizados
+    private final Color AZUL_PRINCIPAL = new Color(30, 58, 138);
+    private final Color AZUL_SECUNDARIO = new Color(59, 130, 246);
+    private final Color BLANCO = new Color(255, 255, 255);
 
-    public GuiControlRestaurante(Connection csql) throws IOException {
+    public GuiControlRestaurante(Connection csql) {
         conexionSQL = csql;
-
-        setTitle("Control Restaurante");
-        setSize(900, 600);
+        setTitle("Sistema de Gestión - Restaurante");
+        setSize(900, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        panelFondoPrincipal = new PanelConFondo (new Color (0,51,102));
-        panelFondoPrincipal.setLayout(new BorderLayout());
-        this.setContentPane(panelFondoPrincipal);
+        
+        // Configuración del panel principal con fondo azul degradado
+        panelPrincipal = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, AZUL_PRINCIPAL, 
+                    getWidth(), getHeight(), AZUL_SECUNDARIO);
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        panelPrincipal.setLayout(new BorderLayout());
+        setContentPane(panelPrincipal);
 
-        // Menú
+        // Configuración del título en negro
+        JLabel lblTitulo = new JLabel("SISTEMA DE GESTIÓN - RESTAURANTE", SwingConstants.CENTER);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblTitulo.setForeground(Color.BLACK);
+        
+        // Efecto de sombra blanca para mejor contraste
+        lblTitulo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createEmptyBorder(20, 0, 20, 0),
+            BorderFactory.createLineBorder(new Color(255, 255, 255, 80), 1, true)
+        ));
+        
+        // Panel para el título con fondo semi-transparente
+        JPanel panelTitulo = new JPanel(new BorderLayout());
+        panelTitulo.setOpaque(false);
+        panelTitulo.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        
+        JLabel fondoTexto = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(new Color(255, 255, 255, 120));
+                g.fillRoundRect(10, 5, getWidth()-20, getHeight()-10, 20, 20);
+            }
+        };
+        fondoTexto.setLayout(new BorderLayout());
+        fondoTexto.add(lblTitulo, BorderLayout.CENTER);
+        panelTitulo.add(fondoTexto, BorderLayout.CENTER);
+        panelPrincipal.add(panelTitulo, BorderLayout.NORTH);
+
+        // Configuración de la barra de menú
         barra = new JMenuBar();
-        menuSistema = new JMenu("Sistema");
-        menuFormularios = new JMenu("Formularios");
-
-        itemSalir = new JMenuItem("Salir");
-        itemClientes = new JMenuItem("Clientes");
-        itemProductos = new JMenuItem("Productos"); // opcional
-
-        itemSalir.addActionListener(this);
-        itemClientes.addActionListener(this);
-        itemProductos.addActionListener(this);
-
+        barra.setBackground(AZUL_PRINCIPAL);
+        barra.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        
+        // Menú Sistema
+        menuSistema = crearMenu("Sistema", BLANCO);
+        itemSalir = crearItemMenu("Salir", BLANCO);
         menuSistema.add(itemSalir);
+        
+        // Menú Formularios
+        menuFormularios = crearMenu("Formularios", BLANCO);
+        itemClientes = crearItemMenu("Clientes", BLANCO);
+        itemProductos = crearItemMenu("Productos", BLANCO);
         menuFormularios.add(itemClientes);
-        menuFormularios.add(itemProductos); // Elimina si no hay productos
+        menuFormularios.add(itemProductos);
 
         barra.add(menuSistema);
         barra.add(menuFormularios);
-
         setJMenuBar(barra);
 
-        // Formularios
+        // Configurar los formularios
         formCliente = new FormularioCliente(conexionSQL);
-        formProducto = new FormularioProducto(conexionSQL); // opcional
+        formProducto = new FormularioProducto(conexionSQL);
+        
+        // Panel para formularios con fondo blanco
+        JPanel panelFormularios = new JPanel(new BorderLayout());
+        panelFormularios.setBackground(BLANCO);
+        panelFormularios.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panelFormularios.add(formCliente);
+        panelPrincipal.add(panelFormularios, BorderLayout.CENTER);
 
-        panelFondoPrincipal.add(BorderLayout.CENTER, formCliente); // Muestra Clientes por defecto
+        // Configurar acciones
+        itemSalir.addActionListener(this);
+        itemClientes.addActionListener(this);
+        itemProductos.addActionListener(this);
+        
+        // Estilo para los componentes
+        UIManager.put("Button.foreground", BLANCO);
+        UIManager.put("Button.background", AZUL_SECUNDARIO);
+        UIManager.put("Label.foreground", BLANCO);
 
         setVisible(true);
     }
 
+    private JMenu crearMenu(String texto, Color color) {
+        JMenu menu = new JMenu(texto);
+        menu.setForeground(color);
+        menu.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        return menu;
+    }
+
+    private JMenuItem crearItemMenu(String texto, Color color) {
+        JMenuItem item = new JMenuItem(texto);
+        item.setForeground(color);
+        item.setBackground(AZUL_PRINCIPAL);
+        item.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        item.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        return item;
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        String comando = e.getActionCommand();
+        JPanel panelFormularios = (JPanel) ((BorderLayout) panelPrincipal.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        panelFormularios.removeAll();
 
-        switch (comando) {
-            case "Salir" -> {
-                try {
-                    if (conexionSQL != null && !conexionSQL.isClosed()) {
-                        conexionSQL.close();
-                        System.out.println("Conexión cerrada correctamente.");
-                    }
-                } catch (SQLException ex) {
-                    System.err.println("Error al cerrar conexión: " + ex.getMessage());
-                }
-                System.exit(0);
-            }
+        switch (e.getActionCommand()) {
+            case "Salir":
+                cerrarAplicacion();
+                break;
+            case "Clientes":
+                panelFormularios.add(formCliente);
+                break;
+            case "Productos":
+                panelFormularios.add(formProducto);
+                break;
+        }
 
-            case "Clientes" -> {
-                panelFondoPrincipal.removeAll();
-                panelFondoPrincipal.add(BorderLayout.CENTER, formCliente);
-                panelFondoPrincipal.revalidate();
-                panelFondoPrincipal.repaint();
-            }
+        panelFormularios.revalidate();
+        panelFormularios.repaint();
+    }
 
-            case "Productos" -> {
-                panelFondoPrincipal.removeAll();
-                panelFondoPrincipal.add(BorderLayout.CENTER, formProducto); // opcional
-                panelFondoPrincipal.revalidate();
-                panelFondoPrincipal.repaint();
+    private void cerrarAplicacion() {
+        try {
+            if (conexionSQL != null && !conexionSQL.isClosed()) {
+                conexionSQL.close();
             }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Error al cerrar la conexión: " + ex.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        System.exit(0);
+    }
+
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            new GuiControlRestaurante(null); // En producción pasar la conexión real
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

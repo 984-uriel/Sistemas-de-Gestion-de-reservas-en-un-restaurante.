@@ -1,5 +1,4 @@
 package com.appcontrolrestaurante;
-//Equipo de Reservas.
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -7,9 +6,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 
-        
-
 public class FormularioCliente extends JPanel implements ActionListener {
+
+    private static final String INSERT_COMMAND = "INSERT";
+    private static final String UPDATE_COMMAND = "UPDATE";
+    private static final String DELETE_COMMAND = "DELETE";
+    private static final String SEARCH_COMMAND = "Buscar ID";
+    private static final String CLEAR_COMMAND = "Limpiar";
 
     private final JTextField tfId, tfNombre, tfCorreo, tfTelefono, tfBuscarId;
     private final JButton btnInsertar, btnModificar, btnEliminar, btnBuscar, btnLimpiar;
@@ -22,7 +25,6 @@ public class FormularioCliente extends JPanel implements ActionListener {
         this.conexionSQL = conexionSQL;
         setLayout(new BorderLayout());
 
-
         // Campos de texto
         tfId = new JTextField();
         tfNombre = new JTextField();
@@ -31,11 +33,11 @@ public class FormularioCliente extends JPanel implements ActionListener {
         tfBuscarId = new JTextField();
 
         // Botones
-        btnInsertar = new JButton("INSERT");
-        btnModificar = new JButton("UPDATE");
-        btnEliminar = new JButton("DELETE");
-        btnBuscar = new JButton("Buscar ID");
-        btnLimpiar = new JButton("Limpiar");
+        btnInsertar = new JButton(INSERT_COMMAND);
+        btnModificar = new JButton(UPDATE_COMMAND);
+        btnEliminar = new JButton(DELETE_COMMAND);
+        btnBuscar = new JButton(SEARCH_COMMAND);
+        btnLimpiar = new JButton(CLEAR_COMMAND);
 
         btnInsertar.addActionListener(this);
         btnModificar.addActionListener(this);
@@ -91,11 +93,11 @@ public class FormularioCliente extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         switch (e.getActionCommand()) {
-            case "INSERT" -> insertar();
-            case "UPDATE" -> modificar();
-            case "DELETE" -> eliminar();
-            case "Buscar ID" -> buscar();
-            case "Limpiar" -> limpiarCampos();
+            case INSERT_COMMAND -> insertar();
+            case UPDATE_COMMAND -> modificar();
+            case DELETE_COMMAND -> eliminar();
+            case SEARCH_COMMAND -> buscar();
+            case CLEAR_COMMAND -> limpiarCampos();
         }
     }
 
@@ -114,13 +116,23 @@ public class FormularioCliente extends JPanel implements ActionListener {
             }
             limpiarCampos();
         } catch (SQLException ex) {
-            historial.append("Error al insertar: " + ex + "\n");
+            historial.append("Error al insertar: " + ex.getMessage() + "\n");
         }
     }
 
     private void modificar() {
-        if (tfBuscarId.getText().isEmpty()) return;
-        int id = Integer.parseInt(tfBuscarId.getText());
+        if (tfBuscarId.getText().isEmpty()) {
+            historial.append("Error: ID no puede estar vacío.\n");
+            return;
+        }
+        int id;
+        try {
+            id = Integer.parseInt(tfBuscarId.getText());
+        } catch (NumberFormatException ex) {
+            historial.append("Error: ID debe ser un número.\n");
+            return;
+        }
+
         String sql = "UPDATE Cliente SET nombre=?, correo=?, telefono=? WHERE id_cliente=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setString(1, tfNombre.getText());
@@ -131,13 +143,23 @@ public class FormularioCliente extends JPanel implements ActionListener {
             actualizarTabla();
             historial.append("Cliente con ID " + id + " modificado\n");
         } catch (SQLException ex) {
-            historial.append("Error al modificar: " + ex + "\n");
+            historial.append("Error al modificar: " + ex.getMessage() + "\n");
         }
     }
 
     private void eliminar() {
-        if (tfBuscarId.getText().isEmpty()) return;
-        int id = Integer.parseInt(tfBuscarId.getText());
+        if (tfBuscarId.getText().isEmpty()) {
+            historial.append("Error: ID no puede estar vacío.\n");
+            return;
+        }
+        int id;
+        try {
+            id = Integer.parseInt(tfBuscarId.getText());
+        } catch (NumberFormatException ex) {
+            historial.append("Error: ID debe ser un número.\n");
+            return;
+        }
+
         String sql = "DELETE FROM Cliente WHERE id_cliente=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setInt(1, id);
@@ -146,13 +168,23 @@ public class FormularioCliente extends JPanel implements ActionListener {
             historial.append("Cliente con ID " + id + " eliminado\n");
             limpiarCampos();
         } catch (SQLException ex) {
-            historial.append("Error al eliminar: " + ex + "\n");
+            historial.append("Error al eliminar: " + ex.getMessage() + "\n");
         }
     }
 
     private void buscar() {
-        if (tfBuscarId.getText().isEmpty()) return;
-        int id = Integer.parseInt(tfBuscarId.getText());
+        if (tfBuscarId.getText().isEmpty()) {
+            historial.append("Error: ID no puede estar vacío.\n");
+            return;
+        }
+        int id;
+        try {
+            id = Integer.parseInt(tfBuscarId.getText());
+        } catch (NumberFormatException ex) {
+            historial.append("Error: ID debe ser un número.\n");
+            return;
+        }
+
         String sql = "SELECT * FROM Cliente WHERE id_cliente=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setInt(1, id);
@@ -166,7 +198,7 @@ public class FormularioCliente extends JPanel implements ActionListener {
                 historial.append("No se encontró el cliente con ID: " + id + "\n");
             }
         } catch (SQLException ex) {
-            historial.append("Error al buscar: " + ex + "\n");
+            historial.append("Error al buscar: " + ex.getMessage() + "\n");
         }
     }
 
@@ -184,7 +216,7 @@ public class FormularioCliente extends JPanel implements ActionListener {
                 });
             }
         } catch (SQLException ex) {
-            historial.append("Error al consultar clientes: " + ex + "\n");
+            historial.append("Error al consultar clientes: " + ex.getMessage() + "\n");
         }
     }
 
