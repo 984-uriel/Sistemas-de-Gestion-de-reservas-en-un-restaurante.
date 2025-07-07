@@ -1,4 +1,5 @@
 package com.appcontrolrestaurante;
+//Equipo de reservas.
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -17,6 +18,7 @@ public class AppControlRestaurante {
             new GuiControlRestaurante(conexion);
         } catch (SQLException e) {
             System.err.println("Error al conectar con la base de datos: " + e.getMessage());
+            
         }
     }
 }
