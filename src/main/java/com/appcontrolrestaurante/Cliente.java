@@ -1,4 +1,5 @@
 package com.appcontrolrestaurante;
+//Equipo de Reservas.
 
 public class Cliente {
     private int idCliente;

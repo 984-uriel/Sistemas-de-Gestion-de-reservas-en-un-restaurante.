@@ -1,5 +1,5 @@
 package com.appcontrolrestaurante;
-//Equipo de reservas.
+//Equipo de reservas
 
 import java.io.IOException;
 import java.sql.Connection;

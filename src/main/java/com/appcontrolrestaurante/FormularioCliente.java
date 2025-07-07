@@ -1,4 +1,6 @@
 package com.appcontrolrestaurante;
+//Equipo de Reservas.
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
