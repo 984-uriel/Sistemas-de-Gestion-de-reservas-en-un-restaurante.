@@ -55,12 +55,12 @@ public class FormularioCliente extends JPanel implements ActionListener {
         panelEntrada.add(tfTelefono);
 
         // Panel de búsqueda
-        JPanel panelBuscar = new JPanel(new BorderLayout());
+        JPanel panelBuscar = new JPanel(new BorderLayout(3,2));
         panelBuscar.add(new JLabel("ID Cliente:"), BorderLayout.WEST);
         panelBuscar.add(tfBuscarId, BorderLayout.CENTER);
 
         // Panel de botones
-        JPanel panelBotones = new JPanel(new GridLayout(1, 5));
+        JPanel panelBotones = new JPanel(new GridLayout(2, 4));
         panelBotones.add(btnInsertar);
         panelBotones.add(btnModificar);
         panelBotones.add(btnEliminar);
@@ -68,7 +68,7 @@ public class FormularioCliente extends JPanel implements ActionListener {
         panelBotones.add(btnLimpiar);
 
         // Historial
-        historial = new JTextArea(4, 20);
+        historial = new JTextArea(4, 25);
         historial.setEditable(false);
 
         // Tabla

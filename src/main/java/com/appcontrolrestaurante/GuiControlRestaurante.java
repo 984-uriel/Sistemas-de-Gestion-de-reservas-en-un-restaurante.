@@ -16,78 +16,47 @@ public class GuiControlRestaurante extends JFrame implements ActionListener {
     private static FormularioCliente formCliente;
     private static FormularioProducto formProducto;
     private JPanel panelPrincipal;
-    
+
     // Colores personalizados
+    private final Color GRIS_CLARO = new Color(240, 240, 240);
+    private final Color GRIS_DARK = new Color(50, 50, 50);
     private final Color AZUL_PRINCIPAL = new Color(30, 58, 138);
     private final Color AZUL_SECUNDARIO = new Color(59, 130, 246);
-    private final Color BLANCO = new Color(255, 255, 255);
 
     public GuiControlRestaurante(Connection csql) {
         conexionSQL = csql;
         setTitle("Sistema de Gestión - Restaurante");
-        setSize(900, 650);
+        setSize(1200, 760);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-        // Configuración del panel principal con fondo azul degradado
-        panelPrincipal = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, AZUL_PRINCIPAL, 
-                    getWidth(), getHeight(), AZUL_SECUNDARIO);
-                g2d.setPaint(gradient);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        panelPrincipal.setLayout(new BorderLayout());
+
+        // Configuración del panel principal con fondo gris claro
+        panelPrincipal = new JPanel(new BorderLayout());
+        panelPrincipal.setBackground(GRIS_CLARO);
         setContentPane(panelPrincipal);
 
-        // Configuración del título en negro
-        JLabel lblTitulo = new JLabel("SISTEMA DE GESTIÓN - RESTAURANTE", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        lblTitulo.setForeground(Color.BLACK);
-        
-        // Efecto de sombra blanca para mejor contraste
-        lblTitulo.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(20, 0, 20, 0),
-            BorderFactory.createLineBorder(new Color(255, 255, 255, 80), 1, true)
-        ));
-        
-        // Panel para el título con fondo semi-transparente
-        JPanel panelTitulo = new JPanel(new BorderLayout());
-        panelTitulo.setOpaque(false);
-        panelTitulo.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-        
-        JLabel fondoTexto = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.setColor(new Color(255, 255, 255, 120));
-                g.fillRoundRect(10, 5, getWidth()-20, getHeight()-10, 20, 20);
-            }
-        };
-        fondoTexto.setLayout(new BorderLayout());
-        fondoTexto.add(lblTitulo, BorderLayout.CENTER);
-        panelTitulo.add(fondoTexto, BorderLayout.CENTER);
-        panelPrincipal.add(panelTitulo, BorderLayout.NORTH);
+        // Configuración del título
+        JLabel lblTitulo = new JLabel("SISTEMA DE RESERVACIONES", SwingConstants.CENTER);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblTitulo.setForeground(GRIS_DARK);
+        lblTitulo.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+
+        panelPrincipal.add(lblTitulo, BorderLayout.NORTH);
 
         // Configuración de la barra de menú
         barra = new JMenuBar();
         barra.setBackground(AZUL_PRINCIPAL);
         barra.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        
+
         // Menú Sistema
-        menuSistema = crearMenu("Sistema", BLANCO);
-        itemSalir = crearItemMenu("Salir", BLANCO);
+        menuSistema = crearMenu("Sistema", Color.WHITE);
+        itemSalir = crearItemMenu("Salir", Color.WHITE);
         menuSistema.add(itemSalir);
-        
+
         // Menú Formularios
-        menuFormularios = crearMenu("Formularios", BLANCO);
-        itemClientes = crearItemMenu("Clientes", BLANCO);
-        itemProductos = crearItemMenu("Productos", BLANCO);
+        menuFormularios = crearMenu("Formularios", Color.WHITE);
+        itemClientes = crearItemMenu("Clientes", Color.WHITE);
+        itemProductos = crearItemMenu("Productos", Color.WHITE);
         menuFormularios.add(itemClientes);
         menuFormularios.add(itemProductos);
 
@@ -98,10 +67,10 @@ public class GuiControlRestaurante extends JFrame implements ActionListener {
         // Configurar los formularios
         formCliente = new FormularioCliente(conexionSQL);
         formProducto = new FormularioProducto(conexionSQL);
-        
+
         // Panel para formularios con fondo blanco
         JPanel panelFormularios = new JPanel(new BorderLayout());
-        panelFormularios.setBackground(BLANCO);
+        panelFormularios.setBackground(Color.WHITE);
         panelFormularios.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         panelFormularios.add(formCliente);
         panelPrincipal.add(panelFormularios, BorderLayout.CENTER);
@@ -110,11 +79,17 @@ public class GuiControlRestaurante extends JFrame implements ActionListener {
         itemSalir.addActionListener(this);
         itemClientes.addActionListener(this);
         itemProductos.addActionListener(this);
-        
+
         // Estilo para los componentes
-        UIManager.put("Button.foreground", BLANCO);
+        UIManager.put("Button.foreground", Color.WHITE);
         UIManager.put("Button.background", AZUL_SECUNDARIO);
-        UIManager.put("Label.foreground", BLANCO);
+        UIManager.put("Label.foreground", GRIS_DARK);
+
+        // Pie de página
+        JLabel lblFooter = new JLabel("© 2025 Restaurante Sabor Azteca. Todos los derechos reservados.", SwingConstants.CENTER);
+        lblFooter.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        lblFooter.setForeground(GRIS_DARK);
+        panelPrincipal.add(lblFooter, BorderLayout.SOUTH);
 
         setVisible(true);
     }
@@ -162,19 +137,11 @@ public class GuiControlRestaurante extends JFrame implements ActionListener {
                 conexionSQL.close();
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Error al cerrar la conexión: " + ex.getMessage(), 
+            JOptionPane.showMessageDialog(this,
+                "Error al cerrar la conexión: " + ex.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
         System.exit(0);
     }
-
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            new GuiControlRestaurante(null); // En producción pasar la conexión real
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
+   
