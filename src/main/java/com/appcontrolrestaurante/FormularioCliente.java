@@ -1,5 +1,5 @@
 package com.appcontrolrestaurante;
-//
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -7,10 +7,9 @@ import java.awt.event.*;
 import java.sql.*;
 
 public class FormularioCliente extends JPanel implements ActionListener {
-
-    private static final String INSERT_COMMAND = "INSERT";
-    private static final String UPDATE_COMMAND = "UPDATE";
-    private static final String DELETE_COMMAND = "DELETE";
+    private static final String INSERT_COMMAND = "Insertar";
+    private static final String UPDATE_COMMAND = "Actualizar";
+    private static final String DELETE_COMMAND = "Borrar";
     private static final String SEARCH_COMMAND = "Buscar ID";
     private static final String CLEAR_COMMAND = "Limpiar";
 
@@ -26,11 +25,11 @@ public class FormularioCliente extends JPanel implements ActionListener {
         setLayout(new BorderLayout());
 
         // Campos de texto
-        tfId = new JTextField();
-        tfNombre = new JTextField();
-        tfCorreo = new JTextField();
-        tfTelefono = new JTextField();
-        tfBuscarId = new JTextField();
+        tfId = new JTextField(10);
+        tfNombre = new JTextField(20);
+        tfCorreo = new JTextField(20);
+        tfTelefono = new JTextField(15);
+        tfBuscarId = new JTextField(10);
 
         // Botones
         btnInsertar = new JButton(INSERT_COMMAND);
@@ -46,7 +45,9 @@ public class FormularioCliente extends JPanel implements ActionListener {
         btnLimpiar.addActionListener(this);
 
         // Panel de entrada
-        JPanel panelEntrada = new JPanel(new GridLayout(3, 2));
+        JPanel panelEntrada = new JPanel(new GridLayout(4, 2));
+        panelEntrada.add(new JLabel("ID Cliente:"));
+        panelEntrada.add(tfBuscarId);
         panelEntrada.add(new JLabel("Nombre:"));
         panelEntrada.add(tfNombre);
         panelEntrada.add(new JLabel("Correo:"));
@@ -54,13 +55,9 @@ public class FormularioCliente extends JPanel implements ActionListener {
         panelEntrada.add(new JLabel("Teléfono:"));
         panelEntrada.add(tfTelefono);
 
-        // Panel de búsqueda
-        JPanel panelBuscar = new JPanel(new BorderLayout(3,2));
-        panelBuscar.add(new JLabel("ID Cliente:"), BorderLayout.WEST);
-        panelBuscar.add(tfBuscarId, BorderLayout.CENTER);
-
         // Panel de botones
-        JPanel panelBotones = new JPanel(new GridLayout(2, 4));
+        JPanel panelBotones = new JPanel();
+        panelBotones.setLayout(new GridLayout(1, 5, 5, 5));
         panelBotones.add(btnInsertar);
         panelBotones.add(btnModificar);
         panelBotones.add(btnEliminar);
@@ -68,24 +65,39 @@ public class FormularioCliente extends JPanel implements ActionListener {
         panelBotones.add(btnLimpiar);
 
         // Historial
-        historial = new JTextArea(4, 25);
+        historial = new JTextArea(5, 30);
         historial.setEditable(false);
 
         // Tabla
-        modeloTabla = new DefaultTableModel(new String[]{"ID", "Nombre", "Correo", "Teléfono"}, 0);
+        modeloTabla = new DefaultTableModel(new String[]{"ID", "Nombre", "Correo", "Teléfono"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Hacer que la tabla no sea editable
+            }
+        };
         tabla = new JTable(modeloTabla);
         JScrollPane scrollTabla = new JScrollPane(tabla);
-
-        // Panel Norte
-        JPanel panelNorte = new JPanel(new BorderLayout());
-        panelNorte.add(panelEntrada, BorderLayout.CENTER);
-        panelNorte.add(panelBuscar, BorderLayout.SOUTH);
+        scrollTabla.setPreferredSize(new Dimension(500, 450));
 
         // Agregando todo
-        add(panelNorte, BorderLayout.NORTH);
+        add(panelEntrada, BorderLayout.NORTH);
         add(panelBotones, BorderLayout.CENTER);
         add(scrollTabla, BorderLayout.SOUTH);
         add(new JScrollPane(historial), BorderLayout.EAST);
+
+        // Evento doble clic en la tabla para cargar datos
+        tabla.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int filaSeleccionada = tabla.getSelectedRow();
+                    if (filaSeleccionada >= 0) {
+                        tfBuscarId.setText(modeloTabla.getValueAt(filaSeleccionada, 0).toString());
+                        buscar();
+                    }
+                }
+            }
+        });
 
         consultarClientes();
     }
@@ -102,12 +114,17 @@ public class FormularioCliente extends JPanel implements ActionListener {
     }
 
     private void insertar() {
+        if (tfNombre.getText().isEmpty() || tfCorreo.getText().isEmpty() || tfTelefono.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         String sql = "INSERT INTO Cliente(nombre, correo, telefono) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, tfNombre.getText());
             stmt.setString(2, tfCorreo.getText());
             stmt.setString(3, tfTelefono.getText());
             stmt.executeUpdate();
+
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
                 int id = rs.getInt(1);
@@ -116,106 +133,132 @@ public class FormularioCliente extends JPanel implements ActionListener {
             }
             limpiarCampos();
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al insertar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             historial.append("Error al insertar: " + ex.getMessage() + "\n");
         }
     }
 
     private void modificar() {
         if (tfBuscarId.getText().isEmpty()) {
-            historial.append("Error: ID no puede estar vacío.\n");
+            JOptionPane.showMessageDialog(this, "El ID no puede estar vacío", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         int id;
         try {
             id = Integer.parseInt(tfBuscarId.getText());
         } catch (NumberFormatException ex) {
-            historial.append("Error: ID debe ser un número.\n");
+            JOptionPane.showMessageDialog(this, "El ID debe ser un número", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
         String sql = "UPDATE Cliente SET nombre=?, correo=?, telefono=? WHERE id_cliente=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setString(1, tfNombre.getText());
             stmt.setString(2, tfCorreo.getText());
             stmt.setString(3, tfTelefono.getText());
             stmt.setInt(4, id);
-            stmt.executeUpdate();
-            actualizarTabla();
-            historial.append("Cliente con ID " + id + " modificado\n");
+            int filasAfectadas = stmt.executeUpdate();
+
+            if (filasAfectadas > 0) {
+                actualizarTabla();
+                historial.append("Cliente con ID " + id + " modificado\n");
+                limpiarCampos();
+            } else {
+                JOptionPane.showMessageDialog(this, "No se encontró el cliente con ID: " + id, "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al modificar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             historial.append("Error al modificar: " + ex.getMessage() + "\n");
         }
     }
 
     private void eliminar() {
         if (tfBuscarId.getText().isEmpty()) {
-            historial.append("Error: ID no puede estar vacío.\n");
+            JOptionPane.showMessageDialog(this, "El ID no puede estar vacío", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         int id;
         try {
             id = Integer.parseInt(tfBuscarId.getText());
         } catch (NumberFormatException ex) {
-            historial.append("Error: ID debe ser un número.\n");
+            JOptionPane.showMessageDialog(this, "El ID debe ser un número", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
+        // Confirmación antes de eliminar
+        int confirmacion = JOptionPane.showConfirmDialog(
+                this,
+                "¿Está seguro de eliminar al cliente con ID: " + id + "?",
+                "Confirmar eliminación",
+                JOptionPane.YES_NO_OPTION
+        );
+        if (confirmacion != JOptionPane.YES_OPTION) {
+            historial.append("Eliminación cancelada para el ID: " + id + "\n");
+            return;
+        }
         String sql = "DELETE FROM Cliente WHERE id_cliente=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setInt(1, id);
-            stmt.executeUpdate();
-            actualizarTabla();
-            historial.append("Cliente con ID " + id + " eliminado\n");
-            limpiarCampos();
+            int filasAfectadas = stmt.executeUpdate();
+
+            if (filasAfectadas > 0) {
+                actualizarTabla();
+                historial.append("Cliente con ID " + id + " eliminado correctamente\n");
+                limpiarCampos();
+            } else {
+                JOptionPane.showMessageDialog(this, "No se encontró el cliente con ID: " + id, "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al eliminar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             historial.append("Error al eliminar: " + ex.getMessage() + "\n");
         }
     }
 
     private void buscar() {
         if (tfBuscarId.getText().isEmpty()) {
-            historial.append("Error: ID no puede estar vacío.\n");
+            JOptionPane.showMessageDialog(this, "El ID no puede estar vacío", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         int id;
         try {
             id = Integer.parseInt(tfBuscarId.getText());
         } catch (NumberFormatException ex) {
-            historial.append("Error: ID debe ser un número.\n");
+            JOptionPane.showMessageDialog(this, "El ID debe ser un número", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
         String sql = "SELECT * FROM Cliente WHERE id_cliente=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
+
             if (rs.next()) {
                 tfNombre.setText(rs.getString("nombre"));
                 tfCorreo.setText(rs.getString("correo"));
                 tfTelefono.setText(rs.getString("telefono"));
                 historial.append("Cliente encontrado: " + rs.getString("nombre") + "\n");
             } else {
-                historial.append("No se encontró el cliente con ID: " + id + "\n");
+                JOptionPane.showMessageDialog(this, "No se encontró el cliente con ID: " + id, "Error", JOptionPane.ERROR_MESSAGE);
+                limpiarCampos();
             }
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al buscar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             historial.append("Error al buscar: " + ex.getMessage() + "\n");
         }
     }
 
     private void consultarClientes() {
-        modeloTabla.setRowCount(0);
+        modeloTabla.setRowCount(0); // Limpiar tabla antes de cargar nuevos datos
         String sql = "SELECT * FROM Cliente";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 modeloTabla.addRow(new Object[]{
-                    rs.getInt("id_cliente"),
-                    rs.getString("nombre"),
-                    rs.getString("correo"),
-                    rs.getString("telefono")
+                        rs.getInt("id_cliente"),
+                        rs.getString("nombre"),
+                        rs.getString("correo"),
+                        rs.getString("telefono")
                 });
             }
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al consultar clientes: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             historial.append("Error al consultar clientes: " + ex.getMessage() + "\n");
         }
     }
@@ -225,9 +268,9 @@ public class FormularioCliente extends JPanel implements ActionListener {
     }
 
     private void limpiarCampos() {
+        tfBuscarId.setText("");
         tfNombre.setText("");
         tfCorreo.setText("");
         tfTelefono.setText("");
-        tfBuscarId.setText("");
     }
 }

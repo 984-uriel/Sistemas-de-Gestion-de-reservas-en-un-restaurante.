@@ -7,31 +7,28 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 
-public class FormularioProducto extends JPanel implements ActionListener {
+public class Formularioempleado extends JPanel implements ActionListener {
 
-    private static final String INSERT_COMMAND = "INSERT";
-    private static final String UPDATE_COMMAND = "UPDATE";
-    private static final String DELETE_COMMAND = "DELETE";
+    private static final String INSERT_COMMAND = "Insertar";
+    private static final String UPDATE_COMMAND = "Actualizar";
+    private static final String DELETE_COMMAND = "Eliminar";
     private static final String SEARCH_COMMAND = "Buscar ID";
     private static final String CLEAR_COMMAND = "Limpiar";
 
-    private final JTextField tfId, tfNombre, tfDescripcion, tfPrecio, tfStock, tfCategoria, tfBuscarId;
+    private final JTextField tfNombre, tfpuesto, tfBuscarId;
     private final JButton btnInsertar, btnModificar, btnEliminar, btnBuscar, btnLimpiar;
     private final JTable tabla;
     private final DefaultTableModel modeloTabla;
     private final JTextArea historial;
     private final Connection conexionSQL;
 
-    public FormularioProducto(Connection conexionSQL) {
+    public Formularioempleado(Connection conexionSQL) {
         this.conexionSQL = conexionSQL;
         setLayout(new BorderLayout());
 
-        tfId = new JTextField();
+  
         tfNombre = new JTextField();
-        tfDescripcion = new JTextField();
-        tfPrecio = new JTextField();
-        tfStock = new JTextField();
-        tfCategoria = new JTextField();
+        tfpuesto = new JTextField();
         tfBuscarId = new JTextField();
 
         btnInsertar = new JButton(INSERT_COMMAND);
@@ -48,10 +45,7 @@ public class FormularioProducto extends JPanel implements ActionListener {
 
         JPanel panelEntrada = new JPanel(new GridLayout(6, 2));
         panelEntrada.add(new JLabel("Nombre:"));       panelEntrada.add(tfNombre);
-        panelEntrada.add(new JLabel("Descripción:"));  panelEntrada.add(tfDescripcion);
-        panelEntrada.add(new JLabel("Precio:"));       panelEntrada.add(tfPrecio);
-        panelEntrada.add(new JLabel("Stock:"));        panelEntrada.add(tfStock);
-        panelEntrada.add(new JLabel("Categoría:"));    panelEntrada.add(tfCategoria);
+        panelEntrada.add(new JLabel("Puesto:"));  panelEntrada.add(tfpuesto);
         panelEntrada.add(new JLabel("Buscar ID:"));    panelEntrada.add(tfBuscarId);
 
         JPanel panelBotones = new JPanel(new GridLayout(1, 5));
@@ -64,7 +58,7 @@ public class FormularioProducto extends JPanel implements ActionListener {
         historial = new JTextArea(4, 20);
         historial.setEditable(false);
 
-        modeloTabla = new DefaultTableModel(new String[]{"ID", "Nombre", "Descripción", "Precio", "Stock", "Categoría"}, 0);
+        modeloTabla = new DefaultTableModel(new String[]{"ID", "Nombre", "Puesto"}, 0);
         tabla = new JTable(modeloTabla);
         JScrollPane scrollTabla = new JScrollPane(tabla);
         
@@ -73,7 +67,7 @@ public class FormularioProducto extends JPanel implements ActionListener {
         add(scrollTabla, BorderLayout.SOUTH);
         add(new JScrollPane(historial), BorderLayout.EAST);
        
-        consultarProductos();
+        consultarempleado();
     }
 
     @Override
@@ -88,27 +82,23 @@ public class FormularioProducto extends JPanel implements ActionListener {
     }
 
     private void insertar() {
-        String sql = "INSERT INTO Producto(nombre, descripcion, precio, stock, categoria) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO empleado(nombre, puesto) VALUES (?, ?)";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, tfNombre.getText());
-            stmt.setString(2, tfDescripcion.getText());
-            stmt.setDouble(3, Double.parseDouble(tfPrecio.getText()));
-            stmt.setInt(4, Integer.parseInt(tfStock.getText()));
-            stmt.setString(5, tfCategoria.getText());
+            stmt.setString(2, tfpuesto.getText());
             stmt.executeUpdate();
 
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
                 int id = rs.getInt(1);
-                modeloTabla.addRow(new Object[]{id, tfNombre.getText(), tfDescripcion.getText(), tfPrecio.getText(), tfStock.getText(), tfCategoria.getText()});
-                historial.append("Producto insertado con ID: " + id + "\n");
+                modeloTabla.addRow(new Object[]{id, tfNombre.getText(), tfpuesto.getText()});
+                historial.append("Empleado insertado con ID: " + id + "\n");
             }
 
             limpiarCampos();
-        } catch (NumberFormatException ex) {
-            historial.append("Error: Precio y Stock deben ser números.\n");
+            actualizarTabla();
         } catch (SQLException ex) {
-            historial.append("Error al insertar producto: " + ex.getMessage() + "\n");
+            historial.append("Error al insertar empleado: " + ex.getMessage() + "\n");
         }
     }
 
@@ -125,21 +115,20 @@ public class FormularioProducto extends JPanel implements ActionListener {
             return;
         }
 
-        String sql = "UPDATE Producto SET nombre=?, descripcion=?, precio=?, stock=?, categoria=? WHERE id_producto=?";
+        String sql = "UPDATE empleado SET nombre=?, puesto=? WHERE id_empleado=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setString(1, tfNombre.getText());
-            stmt.setString(2, tfDescripcion.getText());
-            stmt.setDouble(3, Double.parseDouble(tfPrecio.getText()));
-            stmt.setInt(4, Integer.parseInt(tfStock.getText()));
-            stmt.setString(5, tfCategoria.getText());
-            stmt.setInt(6, id);
-            stmt.executeUpdate();
-            historial.append("Producto con ID " + id + " modificado.\n");
+            stmt.setString(2, tfpuesto.getText());
+            stmt.setInt(3, id);
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                historial.append("Empleado ID " + id + " modificado.\n");
+            } else {
+                historial.append("No se encontró empleado con ID: " + id + "\n");
+            }
             actualizarTabla();
-        } catch (NumberFormatException ex) {
-            historial.append("Error: Precio y Stock deben ser números.\n");
         } catch (SQLException ex) {
-            historial.append("Error al modificar producto: " + ex.getMessage() + "\n");
+            historial.append("Error al modificar empleado: " + ex.getMessage() + "\n");
         }
     }
 
@@ -156,15 +145,15 @@ public class FormularioProducto extends JPanel implements ActionListener {
             return;
         }
 
-        String sql = "DELETE FROM Producto WHERE id_producto=?";
+        String sql = "DELETE FROM empleado WHERE id_empleado=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
-            historial.append("Producto con ID " + id + " eliminado.\n");
+            historial.append("Empleado con ID " + id + " eliminado.\n");
             actualizarTabla();
             limpiarCampos();
         } catch (SQLException ex) {
-            historial.append("Error al eliminar producto: " + ex.getMessage() + "\n");
+            historial.append("Error al eliminar empleado: " + ex.getMessage() + "\n");
         }
     }
 
@@ -181,55 +170,46 @@ public class FormularioProducto extends JPanel implements ActionListener {
             return;
         }
 
-        String sql = "SELECT * FROM Producto WHERE id_producto=?";
+        String sql = "SELECT * FROM empleado WHERE id_empleado=?";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 tfNombre.setText(rs.getString("nombre"));
-                tfDescripcion.setText(rs.getString("descripcion"));
-                tfPrecio.setText(rs.getString("precio"));
-                tfStock.setText(rs.getString("stock"));
-                tfCategoria.setText(rs.getString("categoria"));
-                historial.append("Producto encontrado: " + rs.getString("nombre") + "\n");
+                tfpuesto.setText(rs.getString("puesto"));
+                historial.append("Empleado encontrado: " + rs.getString("nombre") + "\n");
             } else {
-                historial.append("Producto no encontrado con ID: " + id + "\n");
+                historial.append("Empleado no encontrado con ID: " + id + "\n");
             }
         } catch (SQLException ex) {
-            historial.append("Error al buscar producto: " + ex.getMessage() + "\n");
+            historial.append("Error al buscar empleado: " + ex.getMessage() + "\n");
         }
     }
 
-    private void consultarProductos() {
+    private void consultarempleado() {
         modeloTabla.setRowCount(0);
-        String sql = "SELECT * FROM Producto";
+        String sql = "SELECT * FROM empleado";
         try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 modeloTabla.addRow(new Object[]{
-                    rs.getInt("id_producto"),
+                    rs.getInt("id_empleado"),
                     rs.getString("nombre"),
-                    rs.getString("descripcion"),
-                    rs.getDouble("precio"),
-                    rs.getInt("stock"),
-                    rs.getString("categoria")
+                    rs.getString("puesto")
                 });
             }
         } catch (SQLException ex) {
-            historial.append("Error al consultar productos: " + ex.getMessage() + "\n");
+            historial.append("Error al encontrar personal: " + ex.getMessage() + "\n");
         }
     }
 
     private void actualizarTabla() {
-        consultarProductos();
+        consultarempleado();
     }
 
     private void limpiarCampos() {
         tfNombre.setText("");
-        tfDescripcion.setText("");
-        tfPrecio.setText("");
-        tfStock.setText("");
-        tfCategoria.setText("");
+        tfpuesto.setText("");
         tfBuscarId.setText("");
     }
 }
