@@ -2,6 +2,7 @@ package com.appcontrolrestaurante;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -51,7 +52,42 @@ public class ReservacionForm extends JFrame {
             e.printStackTrace();
         }
     }
-
+    
+    private JLabel crearLogo() {
+        // Esta es una imagen de ejemplo - reemplaza con tu propia imagen
+        ImageIcon icono = new ImageIcon(getClass().getResource("E:\\Clases del proyecto Restaurante\\ProyectoRestaurante\\imagen1.png"));
+        if (icono.getImageLoadStatus() != MediaTracker.COMPLETE) {
+            // Si la imagen no carga, usar un placeholder
+            icono = new ImageIcon(createPlaceholderImage(80,50));
+        }
+        
+        Image imagen = icono.getImage().getScaledInstance(80,50, Image.SCALE_SMOOTH);
+        JLabel lblImagen = new JLabel(new ImageIcon(imagen));
+        lblImagen.setHorizontalAlignment(SwingConstants.WEST);
+        lblImagen.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+        return lblImagen;
+    }
+    private Image createPlaceholderImage(int width, int height) {
+        // Crear una imagen de placeholder si la imagen principal no carga
+        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = img.createGraphics();
+        
+        // Fondo blanco
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, width, height);
+        
+        // Texto placeholder
+        g2d.setColor(COLOR_PRIMARIO);
+        g2d.setFont(new Font("Arial", Font.BOLD, 16));
+        String text = "Imagen del Restaurante";
+        FontMetrics fm = g2d.getFontMetrics();
+        int x = (width - fm.stringWidth(text)) / 2;
+        int y = height / 2;
+        g2d.drawString(text, x, y);
+        
+        g2d.dispose();
+        return img;
+    }
     private void initComponents() {
         JPanel panelPrincipal = new JPanel(new BorderLayout(15, 15));
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -216,6 +252,8 @@ public class ReservacionForm extends JFrame {
         cargarMediosReserva();
         spFechaReserva.setValue(new Date());
         spHoraReserva.setValue(new Date());
+        buscarMesasDisponibles (true);
+        
     }
 
     private void cargarRestaurantes() {
@@ -245,7 +283,11 @@ public class ReservacionForm extends JFrame {
     }
 
     private void buscarMesasDisponibles(ActionEvent evt) {
-        if (!validarDatosCliente()) return;
+        buscarMesasDisponibles(false);
+    }
+    private void buscarMesasDisponibles(boolean ignorarValidacionCliente) {
+        if(!ignorarValidacionCliente && !validarDatosCliente())return;
+    
 
         Integer numPersonas = (Integer) cbNumPersonas.getSelectedItem();
         if (numPersonas == null) {

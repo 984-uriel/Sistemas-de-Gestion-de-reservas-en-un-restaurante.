@@ -1,10 +1,14 @@
 package com.appcontrolrestaurante;
-
+//Equipo reservas
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.File;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 public class FormularioCliente extends JPanel implements ActionListener {
     private static final String INSERT_COMMAND = "Insertar";
@@ -46,14 +50,15 @@ public class FormularioCliente extends JPanel implements ActionListener {
 
         // Panel de entrada
         JPanel panelEntrada = new JPanel(new GridLayout(4, 2));
-        panelEntrada.add(new JLabel("ID Cliente:"));
-        panelEntrada.add(tfBuscarId);
+        
         panelEntrada.add(new JLabel("Nombre:"));
         panelEntrada.add(tfNombre);
         panelEntrada.add(new JLabel("Correo:"));
         panelEntrada.add(tfCorreo);
         panelEntrada.add(new JLabel("Teléfono:"));
         panelEntrada.add(tfTelefono);
+        panelEntrada.add(new JLabel("ID Cliente:"));
+        panelEntrada.add(tfBuscarId);
 
         // Panel de botones
         JPanel panelBotones = new JPanel();
@@ -78,6 +83,17 @@ public class FormularioCliente extends JPanel implements ActionListener {
         tabla = new JTable(modeloTabla);
         JScrollPane scrollTabla = new JScrollPane(tabla);
         scrollTabla.setPreferredSize(new Dimension(500, 450));
+        
+        tabla.getSelectionModel().addListSelectionListener(e -> {
+        if (!e.getValueIsAdjusting() && tabla.getSelectedRow() != -1) {
+            int fila = tabla.getSelectedRow();
+            tfBuscarId.setText(tabla.getValueAt(fila, 0).toString());
+            tfNombre.setText(tabla.getValueAt(fila, 1).toString());
+            tfCorreo.setText(tabla.getValueAt(fila, 2).toString());
+            tfTelefono.setText(tabla.getValueAt(fila, 3).toString());
+        }
+    });
+
 
         // Agregando todo
         add(panelEntrada, BorderLayout.NORTH);
@@ -170,47 +186,73 @@ public class FormularioCliente extends JPanel implements ActionListener {
             historial.append("Error al modificar: " + ex.getMessage() + "\n");
         }
     }
-
+    
     private void eliminar() {
-        if (tfBuscarId.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "El ID no puede estar vacío", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
+    if (tfBuscarId.getText().isEmpty()) {
+        JOptionPane.showMessageDialog(this, "El ID no puede estar vacío", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    int id;
+    try {
+        id = Integer.parseInt(tfBuscarId.getText());
+    } catch (NumberFormatException ex) {
+        JOptionPane.showMessageDialog(this, "El ID debe ser un número", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    int confirmacion = JOptionPane.showConfirmDialog(
+            this,
+            "Este cliente puede tener reservas activas. ¿Deseas eliminarlo junto con sus reservas?",
+            "Confirmar eliminación",
+            JOptionPane.YES_NO_OPTION
+    );
+    if (confirmacion != JOptionPane.YES_OPTION) {
+        historial.append("Eliminación cancelada para el ID: " + id + "\n");
+        return;
+    }
+
+    try {
+        conexionSQL.setAutoCommit(false); // Comienza transacción
+
+        // 1. Eliminar reservas del cliente
+        try (PreparedStatement eliminarReservas = conexionSQL.prepareStatement("DELETE FROM Reserva WHERE id_cliente=?")) {
+            eliminarReservas.setInt(1, id);
+            eliminarReservas.executeUpdate();
         }
-        int id;
-        try {
-            id = Integer.parseInt(tfBuscarId.getText());
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "El ID debe ser un número", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        // Confirmación antes de eliminar
-        int confirmacion = JOptionPane.showConfirmDialog(
-                this,
-                "¿Está seguro de eliminar al cliente con ID: " + id + "?",
-                "Confirmar eliminación",
-                JOptionPane.YES_NO_OPTION
-        );
-        if (confirmacion != JOptionPane.YES_OPTION) {
-            historial.append("Eliminación cancelada para el ID: " + id + "\n");
-            return;
-        }
-        String sql = "DELETE FROM Cliente WHERE id_cliente=?";
-        try (PreparedStatement stmt = conexionSQL.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            int filasAfectadas = stmt.executeUpdate();
+
+        // 2. Eliminar cliente
+        try (PreparedStatement eliminarCliente = conexionSQL.prepareStatement("DELETE FROM Cliente WHERE id_cliente=?")) {
+            eliminarCliente.setInt(1, id);
+            int filasAfectadas = eliminarCliente.executeUpdate();
 
             if (filasAfectadas > 0) {
+                conexionSQL.commit();
                 actualizarTabla();
-                historial.append("Cliente con ID " + id + " eliminado correctamente\n");
+                historial.append("Cliente con ID " + id + " y sus reservas fueron eliminados correctamente\n");
                 limpiarCampos();
             } else {
+                conexionSQL.rollback();
                 JOptionPane.showMessageDialog(this, "No se encontró el cliente con ID: " + id, "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    } catch (SQLException ex) {
+        try {
+            conexionSQL.rollback();
+        } catch (SQLException rollbackEx) {
+            historial.append("Error al hacer rollback: " + rollbackEx.getMessage() + "\n");
+        }
+        JOptionPane.showMessageDialog(this, "Error al eliminar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        historial.append("Error al eliminar: " + ex.getMessage() + "\n");
+    } finally {
+        try {
+            conexionSQL.setAutoCommit(true);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al eliminar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            historial.append("Error al eliminar: " + ex.getMessage() + "\n");
+            historial.append("Error al restaurar autoCommit: " + ex.getMessage() + "\n");
         }
     }
+}
+
+
 
     private void buscar() {
         if (tfBuscarId.getText().isEmpty()) {
@@ -243,6 +285,7 @@ public class FormularioCliente extends JPanel implements ActionListener {
             historial.append("Error al buscar: " + ex.getMessage() + "\n");
         }
     }
+    
 
     private void consultarClientes() {
         modeloTabla.setRowCount(0); // Limpiar tabla antes de cargar nuevos datos

@@ -1,10 +1,11 @@
 package com.appcontrolrestaurante;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
+
 
 public class GuiControlRestaurante extends JFrame implements ActionListener {
 
@@ -29,7 +30,7 @@ public class GuiControlRestaurante extends JFrame implements ActionListener {
     public GuiControlRestaurante(Connection csql) {
         conexionSQL = csql;
         setTitle("Sistema de Gestión - Restaurante");
-        setSize(1200, 760);
+        setSize(1000, 790);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
